@@ -697,12 +697,16 @@ const raw: SeedProduct[] = [
     price: 0,
     condition: 'new',
     colors: white,
+    memory: [
+      { label: 'Slim', delta: 0 },
+      { label: 'Pro', delta: 0 },
+    ],
     specs: [
       ['Накопитель', 'SSD'],
       ['Геймпад', 'DualSense'],
       ['Разрешение', 'до 4K'],
     ],
-    description: 'Мощная консоль с быстрым SSD и плавной графикой. Играйте один или с друзьями онлайн. Под заказ.',
+    description: 'Мощная консоль с быстрым SSD и плавной графикой. Есть версии Slim и Pro. Играйте один или с друзьями онлайн. Под заказ.',
   },
   {
     id: 'yandex-station-midi',
@@ -738,10 +742,13 @@ const photoCount: Record<string, number> = {
   'iphone-18-pro-max': 4,
   'iphone-18-pro': 4,
   'iphone-duo': 4,
+  'iphone-17-pro-max': 3,
+  'iphone-17-pro': 3,
   'iphone-air': 4,
-  'iphone-17': 4,
+  'iphone-17': 5,
   'iphone-17e': 3,
   'iphone-16': 4,
+  'macbook-neo': 5,
   'macbook-air-13-m5': 4,
   'macbook-air-15-m5': 3,
   'macbook-pro-14-m5': 2,
@@ -763,16 +770,31 @@ const photoCount: Record<string, number> = {
   'pencil-pro': 2,
   'pencil-usb-c': 2,
   'airtag': 2,
+  'used-iphone-17-512': 1,
+  'used-iphone-16-pro-max': 1,
+  'used-iphone-15-pro-max': 1,
+  'used-iphone-15-pro-256': 1,
+  'used-iphone-15-pro-128': 1,
+  'used-iphone-14-pro-max-silver': 1,
+  'used-iphone-14-pro-max-black': 1,
+  'used-iphone-13-pro-max': 1,
+  'dyson-airwrap': 1,
+  'playstation-5': 2,
+  'yandex-station-midi': 1,
 }
-// У этих товаров n-е фото соответствует n-му цвету: при выборе цвета галерея листается к нему.
+// У этих товаров фото идут в порядке цветов: при выборе цвета галерея листается к нему.
+// Если первым стоит общее фото (все цвета сразу), товар указан в withCover и цвета начинаются со второго фото.
 const photoPerColor = new Set([
   'iphone-18-pro-max',
   'iphone-18-pro',
   'iphone-duo',
+  'iphone-17-pro-max',
+  'iphone-17-pro',
   'iphone-air',
   'iphone-17',
   'iphone-17e',
   'iphone-16',
+  'macbook-neo',
   'macbook-air-13-m5',
   'macbook-air-15-m5',
   'macbook-pro-14-m5',
@@ -787,12 +809,15 @@ const photoPerColor = new Set([
   'airpods-max-2',
 ])
 
+const withCover = new Set(['macbook-neo'])
+
 export const seedProducts = (now = Date.now()): Product[] =>
   raw.map((p, i) => {
     const photos = Array.from({ length: photoCount[p.id] ?? 0 }, (_, n) => `/products/${p.id}-${n + 1}.webp`)
+    const offset = withCover.has(p.id) ? 1 : 0
     return {
       ...p,
-      colors: photoPerColor.has(p.id) ? p.colors.map((c, n) => (photos[n] ? { ...c, photo: photos[n] } : c)) : p.colors,
+      colors: photoPerColor.has(p.id) ? p.colors.map((c, n) => (photos[n + offset] ? { ...c, photo: photos[n + offset] } : c)) : p.colors,
       quantity: stock[p.id] ?? (p.condition === 'used' ? 1 : 5),
       preorder: preorder.has(p.id) || undefined,
       photos,
@@ -802,7 +827,7 @@ export const seedProducts = (now = Date.now()): Product[] =>
   })
 
 /** Меняйте при каждом изменении стартового каталога: сервер подтянет новую версию в хранилище. */
-export const SEED_VERSION = 2
+export const SEED_VERSION = 3
 
 /**
  * Переносит новую версию стартового каталога в уже сохранённый, ничего не удаляя.
