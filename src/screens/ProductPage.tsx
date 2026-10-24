@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { availability, canBuy, categoryTitle } from '../../shared/catalog'
+import { availability, canBuy, categoryTitle, hasPrice, type CategoryId } from '../../shared/catalog'
 import { Gallery } from '../components/Gallery'
 import { Icon } from '../components/Icon'
 import { ManagerButtons } from '../components/ManagerButtons'
@@ -9,6 +9,16 @@ import { shop, telegramUrl } from '../config'
 import { useCatalog, useProduct } from '../lib/catalog'
 import { formatPrice, useStore } from '../lib/store'
 import { tg } from '../lib/telegram'
+
+const optionLabel: Record<CategoryId, string> = {
+  iphone: 'Память',
+  ipad: 'Память',
+  mac: 'Конфигурация',
+  watch: 'Размер',
+  audio: 'Вариант',
+  accessories: 'Комплект',
+  gadgets: 'Вариант',
+}
 
 export function ProductPage({ id }: { id: string }) {
   const product = useProduct(id)
@@ -41,8 +51,11 @@ export function ProductPage({ id }: { id: string }) {
   const fullTitle = [product.title, product.memory && product.memory.length > 1 ? memory?.label : '', product.colors.length > 1 ? color?.name : '']
     .filter(Boolean)
     .join(', ')
-  const managerText = `Здравствуйте! Интересует: ${fullTitle}, ${formatPrice(price)}`
+  const priced = hasPrice(product)
+  const managerText = priced ? `Здравствуйте! Интересует: ${fullTitle}, ${formatPrice(price)}` : `Здравствуйте! Интересует: ${fullTitle}. Подскажите цену?`
   const state = availability(product).kind
+  // Короткие плюсы магазина под товаром. Гарантию из закрепа канала показываем только у новой техники.
+  const perks = shop.perks.filter((p) => !p.title.startsWith('Перенос') && (product.condition === 'new' || !p.title.startsWith('Гарантия'))).slice(0, 4)
 
   const mainAction = (() => {
     if (canBuy(product))
@@ -55,11 +68,13 @@ export function ProductPage({ id }: { id: string }) {
           setAdded(true)
         },
       }
-    const text = state === 'preorder' ? 'Оформить предзаказ' : 'Узнать о поступлении'
+    const text = state === 'preorder' ? 'Оформить предзаказ' : state === 'out' ? 'Узнать о поступлении' : 'Узнать цену'
     const message =
       state === 'preorder'
-        ? `Здравствуйте! Хочу оформить предзаказ: ${fullTitle}, ${formatPrice(price)}`
-        : `Здравствуйте! Сообщите, пожалуйста, когда появится: ${fullTitle}`
+        ? `Здравствуйте! Хочу оформить предзаказ: ${fullTitle}${priced ? `, ${formatPrice(price)}` : ''}`
+        : state === 'out'
+          ? `Здравствуйте! Сообщите, пожалуйста, когда появится: ${fullTitle}`
+          : managerText
     return { text, onClick: () => tg.openTelegramLink(telegramUrl(shop.managers[0], message)) }
   })()
 
@@ -84,7 +99,7 @@ export function ProductPage({ id }: { id: string }) {
         }
       />
 
-      <Gallery product={product} color={color?.hex} />
+      <Gallery product={product} color={color?.hex} activePhoto={color?.photo} />
 
       <div className="mt-5 px-4">
         <div className="flex flex-wrap items-center gap-2">
@@ -95,8 +110,8 @@ export function ProductPage({ id }: { id: string }) {
         </div>
         <h1 className="mt-2 text-[28px] leading-[1.15] font-bold tracking-tight">{product.title}</h1>
         <div className="mt-2 flex items-baseline gap-2">
-          <span className="text-[26px] font-bold tracking-tight">{formatPrice(price)}</span>
-          {product.oldPrice && <span className="text-[17px] text-hint line-through">{formatPrice(product.oldPrice + (memory?.delta ?? 0))}</span>}
+          <span className="text-[26px] font-bold tracking-tight">{priced ? formatPrice(price) : 'Цена по запросу'}</span>
+          {priced && product.oldPrice && <span className="text-[17px] text-hint line-through">{formatPrice(product.oldPrice + (memory?.delta ?? 0))}</span>}
         </div>
       </div>
 
@@ -121,7 +136,7 @@ export function ProductPage({ id }: { id: string }) {
 
       {product.memory && product.memory.length > 1 && (
         <div className="mt-6 px-4">
-          <div className="text-[15px] text-hint">{product.category === 'watch' ? 'Размер' : 'Память'}</div>
+          <div className="text-[15px] text-hint">{optionLabel[product.category]}</div>
           <div className="mt-2.5 flex flex-wrap gap-2">
             {product.memory.map((m, i) => (
               <button
@@ -139,12 +154,12 @@ export function ProductPage({ id }: { id: string }) {
       )}
 
       {product.condition === 'used' && (
-        <div className="mx-4 mt-6 grid grid-cols-3 gap-2 text-center">
-          <Stat value={product.used?.battery ? `${product.used.battery}%` : '—'} label="Аккумулятор" />
-          <Stat value={product.used?.grade || '—'} label="Состояние" />
-          <Stat value={shop.warrantyUsed} label="Гарантия" />
+        <div className="mx-4 mt-6 grid grid-cols-2 gap-2 text-center">
+          {product.used?.battery !== undefined && <Stat value={`${product.used.battery}%`} label="Аккумулятор" />}
+          {product.used?.grade && <Stat value={product.used.grade} label="Состояние" />}
+          {shop.warrantyUsed && <Stat value={shop.warrantyUsed} label="Гарантия" />}
           {product.used?.kit && (
-            <div className="card col-span-3 px-4 py-3 text-left text-[15px]">
+            <div className="card col-span-full px-4 py-3 text-left text-[15px]">
               <span className="text-hint">Комплект: </span>
               {product.used.kit}
             </div>
@@ -160,6 +175,17 @@ export function ProductPage({ id }: { id: string }) {
             <div key={k} className="flex justify-between gap-4 border-b border-sep px-4 py-3 text-[15px] last:border-0">
               <span className="text-hint">{k}</span>
               <span className="text-right font-medium">{v}</span>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {perks.length > 0 && (
+        <div className="card mx-4 mt-6 grid grid-cols-2 gap-x-3 gap-y-3 p-4">
+          {perks.map((p) => (
+            <div key={p.title} className="flex items-center gap-2 text-[14px] leading-tight">
+              <span className="text-[18px]">{p.emoji}</span>
+              {p.title}
             </div>
           ))}
         </div>

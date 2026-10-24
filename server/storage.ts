@@ -1,12 +1,12 @@
 import { getStore } from '@netlify/blobs'
-import type { Product } from '../shared/catalog'
-import { seedProducts } from '../shared/seed'
+import { PHOTO_KEY_RE, type Product } from '../shared/catalog'
+import { SEED_VERSION, seedProducts, syncSeed } from '../shared/seed'
 
 // Хранилище на Netlify Blobs: весь каталог лежит одним JSON-документом (для магазина
 // на сотни товаров это быстро и просто), фото — отдельными бинарными записями.
 // Локально `npm run dev` поднимает эмулятор Blobs (см. scripts/dev-api.ts).
 
-type CatalogDoc = { version: 1; products: Product[] }
+type CatalogDoc = { version: 1; /** Версия стартового каталога, с которой сверен документ. */ seed?: number; products: Product[] }
 
 const CATALOG_KEY = 'catalog'
 const catalogStore = () => getStore({ name: 'catalog', consistency: 'strong' })
@@ -14,13 +14,26 @@ const photoStore = () => getStore({ name: 'photos', consistency: 'strong' })
 
 async function readDoc(): Promise<{ doc: CatalogDoc; etag?: string }> {
   const store = catalogStore()
-  const found = await store.getWithMetadata(CATALOG_KEY, { type: 'json' })
-  if (found) return { doc: found.data as CatalogDoc, etag: found.etag }
-  // Первый запуск: переносим стартовый каталог. onlyIfNew защищает от гонки двух запросов.
-  const doc: CatalogDoc = { version: 1, products: seedProducts() }
-  await store.setJSON(CATALOG_KEY, doc, { onlyIfNew: true })
-  const created = await store.getWithMetadata(CATALOG_KEY, { type: 'json' })
-  return created ? { doc: created.data as CatalogDoc, etag: created.etag } : { doc }
+  let last: { doc: CatalogDoc; etag?: string } | undefined
+  for (let attempt = 0; attempt < 4; attempt++) {
+    const found = await store.getWithMetadata(CATALOG_KEY, { type: 'json' })
+    if (!found) {
+      // Первый запуск: переносим стартовый каталог. onlyIfNew защищает от гонки двух запросов.
+      const doc: CatalogDoc = { version: 1, seed: SEED_VERSION, products: seedProducts() }
+      await store.setJSON(CATALOG_KEY, doc, { onlyIfNew: true })
+      last = { doc }
+      continue
+    }
+    const doc = found.data as CatalogDoc
+    last = { doc, etag: found.etag }
+    if ((doc.seed ?? 1) >= SEED_VERSION) return last
+    // Стартовый каталог обновился: аккуратно подтягиваем изменения (см. syncSeed). Если документ
+    // параллельно поменяли, условная запись не пройдёт, и мы перечитаем его на следующем круге.
+    const migrated: CatalogDoc = { ...doc, seed: SEED_VERSION, products: syncSeed(doc.products, seedProducts()) }
+    await store.setJSON(CATALOG_KEY, migrated, found.etag ? { onlyIfMatch: found.etag } : undefined)
+  }
+  if (!last) throw new Error('Не удалось прочитать каталог')
+  return last
 }
 
 export async function listProducts(): Promise<Product[]> {
@@ -55,5 +68,6 @@ export async function getPhoto(key: string): Promise<{ data: ArrayBuffer; conten
 }
 
 export async function deletePhotos(keys: string[]) {
-  await Promise.all(keys.map((k) => photoStore().delete(k)))
+  // Фото стартового каталога лежат в public/products, в хранилище их нет.
+  await Promise.all(keys.filter((k) => PHOTO_KEY_RE.test(k)).map((k) => photoStore().delete(k)))
 }

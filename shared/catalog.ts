@@ -1,6 +1,6 @@
 // Модель каталога, общая для клиента и сервера.
 
-export type CategoryId = 'iphone' | 'ipad' | 'mac' | 'watch' | 'audio' | 'accessories'
+export type CategoryId = 'iphone' | 'ipad' | 'mac' | 'watch' | 'audio' | 'accessories' | 'gadgets'
 
 export const categories: { id: CategoryId; title: string; emoji: string }[] = [
   { id: 'iphone', title: 'iPhone', emoji: '📱' },
@@ -9,11 +9,13 @@ export const categories: { id: CategoryId; title: string; emoji: string }[] = [
   { id: 'watch', title: 'Watch', emoji: '⌚' },
   { id: 'audio', title: 'AirPods', emoji: '🎧' },
   { id: 'accessories', title: 'Аксессуары', emoji: '🔌' },
+  { id: 'gadgets', title: 'Гаджеты', emoji: '🎮' },
 ]
 
 export const categoryTitle = (id: CategoryId) => categories.find((c) => c.id === id)?.title ?? id
 
-export type Color = { name: string; hex: string }
+/** `photo` — фото этого цвета из списка photos: при выборе цвета галерея перелистывается на него. */
+export type Color = { name: string; hex: string; photo?: string }
 export type MemoryOption = { label: string; delta: number }
 export type UsedInfo = { battery?: number; grade?: string; kit?: string }
 
@@ -52,11 +54,19 @@ export function availability(p: Pick<Product, 'quantity' | 'preorder'>): Availab
   return { kind: 'in_stock', label: 'В наличии' }
 }
 
-export const canBuy = (p: Pick<Product, 'quantity' | 'preorder'>) => !p.preorder && p.quantity > 0
+/** Цена 0 означает «Цена по запросу»: такой товар не кладут в корзину, а спрашивают у менеджера. */
+export const hasPrice = (p: Pick<Product, 'price'>) => p.price > 0
 
-export const photoUrl = (key: string) => `/api/photos/${key}`
+export const canBuy = (p: Pick<Product, 'quantity' | 'preorder' | 'price'>) => !p.preorder && p.quantity > 0 && hasPrice(p)
 
+/** Фото, загруженное через админку (лежит в хранилище). */
 export const PHOTO_KEY_RE = /^[a-z0-9-]{8,64}\.(webp|jpg|png)$/
+/** Фото из стартового каталога: статический файл из public/products. */
+export const STATIC_PHOTO_RE = /^\/products\/[a-z0-9-]{1,80}\.(webp|jpg|png)$/
+
+export const isPhotoKey = (key: string) => PHOTO_KEY_RE.test(key) || STATIC_PHOTO_RE.test(key)
+
+export const photoUrl = (key: string) => (STATIC_PHOTO_RE.test(key) ? key : `/api/photos/${key}`)
 export const MAX_PHOTO_BYTES = 5 * 1024 * 1024
 export const MAX_PHOTOS = 10
 
@@ -132,7 +142,7 @@ export function validateProductInput(input: unknown, partial: boolean): { error:
   if (has('photos') || !partial) {
     const photos = Array.isArray(i.photos) ? i.photos : []
     if (photos.length > MAX_PHOTOS) return { error: `Не больше ${MAX_PHOTOS} фото` }
-    if (!photos.every((k) => typeof k === 'string' && PHOTO_KEY_RE.test(k))) return { error: 'Некорректное фото' }
+    if (!photos.every((k) => typeof k === 'string' && isPhotoKey(k))) return { error: 'Некорректное фото' }
     out.photos = [...new Set(photos as string[])]
   }
   if ('used' in i) {

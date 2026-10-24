@@ -131,7 +131,7 @@ function AdminRow({ product, onOpen }: { product: Product; onOpen: () => void })
         <div className="min-w-0 flex-1">
           <div className="truncate text-[16px] font-semibold">{product.title}</div>
           <div className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-[14px] text-hint">
-            <span>{formatPrice(product.price)}</span>
+            <span>{product.price > 0 ? formatPrice(product.price) : 'Цена по запросу'}</span>
             {product.condition === 'used' && <span>· Б/У</span>}
             <StatusBadge product={{ ...product, quantity: qty }} />
             {product.hidden && <span className="text-[12px] font-semibold">Скрыт</span>}

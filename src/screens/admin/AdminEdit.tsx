@@ -266,7 +266,7 @@ export function AdminEdit({ id }: { id?: string }) {
             ]}
           />
         </div>
-        <Field label="Цена, ₽" required inputMode="numeric" value={form.price} onChange={(v) => set('price', v.replace(/[^\d]/g, ''))} placeholder="0" />
+        <Field label="Цена, ₽ (0 — «Цена по запросу»)" required inputMode="numeric" value={form.price} onChange={(v) => set('price', v.replace(/[^\d]/g, ''))} placeholder="0" />
         <Field label="Старая цена, ₽ (для скидки)" inputMode="numeric" value={form.oldPrice} onChange={(v) => set('oldPrice', v.replace(/[^\d]/g, ''))} />
       </Group>
 

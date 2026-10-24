@@ -1,4 +1,4 @@
-import type { Product } from '../../shared/catalog'
+import { hasPrice, type Product } from '../../shared/catalog'
 import { formatPrice, useStore } from '../lib/store'
 import { tg } from '../lib/telegram'
 import { Icon } from './Icon'
@@ -39,11 +39,15 @@ export function ProductCard({ product }: { product: Product }) {
         <StatusBadge product={product} className="self-start" />
         <h3 className="mt-1.5 line-clamp-2 min-h-[2.6em] text-[15px] leading-[1.3] font-semibold">{product.title}</h3>
         <div className="mt-1 flex flex-wrap items-baseline gap-x-1.5">
-          <span className="text-[17px] font-bold tracking-tight">
-            {product.memory && product.memory.length > 1 ? 'от ' : ''}
-            {formatPrice(product.price)}
-          </span>
-          {product.oldPrice && <span className="text-[13px] text-hint line-through">{formatPrice(product.oldPrice)}</span>}
+          {hasPrice(product) ? (
+            <span className="text-[17px] font-bold tracking-tight">
+              {product.memory && product.memory.length > 1 ? 'от ' : ''}
+              {formatPrice(product.price)}
+            </span>
+          ) : (
+            <span className="text-[15px] font-semibold">Цена по запросу</span>
+          )}
+          {hasPrice(product) && product.oldPrice && <span className="text-[13px] text-hint line-through">{formatPrice(product.oldPrice)}</span>}
         </div>
         <span className="mt-2.5 rounded-xl bg-fill py-2 text-center text-[14px] font-semibold text-link">Подробнее</span>
       </div>

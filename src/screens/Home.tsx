@@ -1,8 +1,9 @@
 import { useMemo, useState } from 'react'
-import { availability, type Product } from '../../shared/catalog'
+import { availability, hasPrice, photoUrl, type Product } from '../../shared/catalog'
 import { ProductGrid, ProductGridSkeleton } from '../components/ProductCard'
 import { Chip, ChipRow, Empty, IconButton, PillButton } from '../components/ui'
 import { Icon } from '../components/Icon'
+import { Logo } from '../components/Logo'
 import { useCatalog } from '../lib/catalog'
 import { useStore } from '../lib/store'
 import { tg } from '../lib/telegram'
@@ -19,6 +20,7 @@ const filters: Filter[] = [
   { id: 'watch', label: 'Watch', match: (p) => p.category === 'watch' },
   { id: 'audio', label: 'AirPods', match: (p) => p.category === 'audio' },
   { id: 'accessories', label: 'Аксессуары', match: (p) => p.category === 'accessories' },
+  { id: 'gadgets', label: 'Гаджеты', match: (p) => p.category === 'gadgets' },
 ]
 
 type Sort = 'popular' | 'cheap' | 'expensive' | 'fresh'
@@ -60,13 +62,13 @@ export function Home() {
       (p) =>
         (!match || match(p)) &&
         (!q || `${p.title} ${p.description}`.toLowerCase().includes(q)) &&
-        p.price >= min &&
-        p.price < max &&
+        (range === 0 || (hasPrice(p) && p.price >= min && p.price < max)) &&
         (!inStock || availability(p).kind === 'in_stock' || availability(p).kind === 'few'),
     )
     const by: Record<Sort, (a: Product, b: Product) => number> = {
       popular: (a, b) => popularity(a) - popularity(b),
-      cheap: (a, b) => a.price - b.price,
+      // Товары «Цена по запросу» в обоих случаях в конце.
+      cheap: (a, b) => (a.price || Number.MAX_SAFE_INTEGER) - (b.price || Number.MAX_SAFE_INTEGER),
       expensive: (a, b) => b.price - a.price,
       fresh: (a, b) => b.createdAt - a.createdAt,
     }
@@ -84,10 +86,11 @@ export function Home() {
   return (
     <div className="pb-6">
       <header className="px-4 pt-[calc(16px+var(--safe-top))]">
-        <div className="flex items-start gap-3">
+        <div className="flex items-center gap-3">
+          <Logo size={52} />
           <div className="min-w-0 flex-1">
-            <div className="text-[13px] font-medium tracking-wide text-hint uppercase">{shop.tagline}</div>
-            <h1 className="text-[34px] leading-[1.1] font-extrabold tracking-tight">{shop.name}</h1>
+            <h1 className="text-[30px] leading-[1.1] font-extrabold tracking-tight">{shop.name}</h1>
+            <div className="truncate text-[13px] font-medium tracking-wide text-hint uppercase">{shop.tagline}</div>
           </div>
           {isAdmin && (
             <IconButton label="Админ-панель" onClick={() => navigate({ name: 'admin' })}>
@@ -102,7 +105,7 @@ export function Home() {
             onChange={(e) => setQuery(e.target.value)}
             type="search"
             enterKeyHint="search"
-            placeholder="Поиск: iPhone 17, AirPods…"
+            placeholder="Поиск: iPhone 18 Pro, AirPods…"
             className="h-full min-w-0 flex-1 bg-transparent text-[17px] outline-none placeholder:text-hint"
           />
           {query && (
@@ -218,30 +221,44 @@ function SelectPill({ value, options, onChange, active, label }: {
   )
 }
 
+type Banner = { title: string; text: string; cta: string; onClick?: () => void; image?: string; gradient?: string }
+
 function Promo() {
   const navigate = useStore((s) => s.navigate)
-  const banners = [
-    { title: 'Предзаказ новинок', text: 'Привезём под заказ любую модель', cta: 'Узнать', gradient: 'from-[#1d1d1f] to-[#434344]', onClick: () => tg.openTelegramLink(telegramUrl(shop.managers[0], 'Здравствуйте! Хочу оформить предзаказ новинки.')) },
-    { title: 'Ремонт за 30 минут', text: 'Замена батареи iPhone от 2 990 ₽', cta: 'Записаться', gradient: 'from-[#0071e3] to-[#42a1ff]', onClick: () => navigate({ name: 'repair' }) },
+  const products = useCatalog((s) => s.products)
+  const product = (id: string) => products.find((p) => p.id === id)
+  const openProduct = (id: string) => (product(id) ? () => navigate({ name: 'product', id }) : undefined)
+  const askManager = (text: string) => () => tg.openTelegramLink(telegramUrl(shop.managers[0], text))
+  const banners: Banner[] = [
+    { title: 'iPhone 18 Pro уже в наличии', text: 'A20 Pro и камера с переменной диафрагмой', cta: 'Смотреть', image: product('iphone-18-pro-max')?.photos[0], onClick: openProduct('iphone-18-pro-max') },
+    { title: 'Предзаказ iPhone Duo', text: 'Первый складной iPhone', cta: 'Подробнее', image: product('iphone-duo')?.photos[0], onClick: openProduct('iphone-duo') },
+    { title: 'Трейд-ин', text: 'Сдайте старое устройство и получите скидку на новое', cta: 'Оценить', gradient: 'from-[#1d1d1f] to-[#3a3a3c]', onClick: askManager('Здравствуйте! Хочу сдать устройство по трейд-ину. Модель: ') },
+    { title: 'Рассрочка 0-0-36', text: 'Без первого взноса, до 36 месяцев', cta: 'Узнать условия', gradient: 'from-[#4a1724] to-[#8a3346]', onClick: askManager('Здравствуйте! Хочу оформить покупку в рассрочку.') },
+    { title: 'Замена аккумулятора', text: 'iPhone стал быстрее разряжаться? Заменим батарею', cta: 'Записаться', gradient: 'from-[#0071e3] to-[#42a1ff]', onClick: () => navigate({ name: 'repair' }) },
   ]
   return (
     <div className="no-scrollbar mt-4 flex snap-x snap-mandatory gap-3 overflow-x-auto px-4">
-      {banners.map((b) => (
-        <button
-          key={b.title}
-          onClick={() => {
-            tg.haptic.tap()
-            b.onClick()
-          }}
-          className={`pressable flex h-32 w-[82%] shrink-0 snap-center flex-col justify-between rounded-[20px] bg-gradient-to-br p-4 text-left text-white ${b.gradient}`}
-        >
-          <div>
-            <div className="text-[20px] leading-tight font-bold tracking-tight">{b.title}</div>
-            <div className="mt-1 text-[14px] opacity-80">{b.text}</div>
-          </div>
-          <span className="text-[15px] font-semibold">{b.cta} ›</span>
-        </button>
-      ))}
+      {banners
+        .filter((b) => b.onClick)
+        .map((b) => (
+          <button
+            key={b.title}
+            onClick={() => {
+              tg.haptic.tap()
+              b.onClick?.()
+            }}
+            className={`pressable relative flex min-h-32 w-[82%] shrink-0 snap-center flex-col justify-between gap-3 overflow-hidden rounded-[20px] p-4 text-left ${
+              b.image ? 'bg-[#f5f5f7] pr-[42%] text-[#1d1d1f]' : `bg-gradient-to-br text-white ${b.gradient}`
+            }`}
+          >
+            {b.image && <img src={photoUrl(b.image)} alt="" className="absolute top-0 right-0 h-full w-[44%] object-contain" />}
+            <div className="relative">
+              <div className="text-[20px] leading-tight font-bold tracking-tight">{b.title}</div>
+              <div className="mt-1 text-[14px] opacity-75">{b.text}</div>
+            </div>
+            <span className={`relative text-[15px] font-semibold ${b.image ? 'text-[#0071e3]' : ''}`}>{b.cta} ›</span>
+          </button>
+        ))}
     </div>
   )
 }
