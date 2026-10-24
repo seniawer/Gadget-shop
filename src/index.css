@@ -1,0 +1,55 @@
+@import 'tailwindcss';
+
+/* Цвета берём из темы Telegram (переменные выставляет telegram-web-app.js).
+   Значения после запятой используются в обычном браузере. */
+@theme {
+  --color-bg: var(--tg-theme-bg-color, #ffffff);
+  --color-bg2: var(--tg-theme-secondary-bg-color, #f2f3f7);
+  --color-section: var(--tg-theme-section-bg-color, #ffffff);
+  --color-text: var(--tg-theme-text-color, #111114);
+  --color-hint: var(--tg-theme-hint-color, #8a8f98);
+  --color-link: var(--tg-theme-link-color, #2f6bff);
+  --color-accent: var(--tg-theme-button-color, #2f6bff);
+  --color-accent-text: var(--tg-theme-button-text-color, #ffffff);
+  --color-danger: var(--tg-theme-destructive-text-color, #e5484d);
+  --font-sans: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not(.tg) {
+    --tg-theme-bg-color: #17181c;
+    --tg-theme-secondary-bg-color: #0f1013;
+    --tg-theme-section-bg-color: #1f2026;
+    --tg-theme-text-color: #f2f3f5;
+    --tg-theme-hint-color: #8a8f98;
+  }
+}
+
+html,
+body {
+  background: var(--color-bg2);
+  color: var(--color-text);
+  font-family: var(--font-sans);
+  -webkit-tap-highlight-color: transparent;
+  overscroll-behavior: none;
+}
+
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  scrollbar-width: none;
+}
+
+@keyframes screen-in {
+  /* Только прозрачность: transform сломал бы position: fixed у кнопок внутри экрана. */
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+.screen-in {
+  animation: screen-in 0.18s ease-out;
+}

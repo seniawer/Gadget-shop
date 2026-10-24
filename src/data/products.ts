@@ -1,0 +1,611 @@
+// Демо-каталог. Цены ориентировочные и нужны только для портфолио.
+
+export type CategoryId = 'iphone' | 'ipad' | 'mac' | 'watch' | 'audio' | 'accessories' | 'used'
+
+export type Category = {
+  id: CategoryId
+  title: string
+  emoji: string
+}
+
+export type Color = { name: string; hex: string }
+export type MemoryOption = { label: string; delta: number }
+
+export type Product = {
+  id: string
+  category: Exclude<CategoryId, 'used'>
+  title: string
+  price: number
+  oldPrice?: number
+  condition: 'new' | 'used'
+  colors: Color[]
+  memory?: MemoryOption[]
+  specs: [string, string][]
+  description: string
+  tags?: ('hit' | 'new' | 'sale')[]
+  used?: { battery: number; grade: 'A' | 'B'; kit: string }
+}
+
+export const categories: Category[] = [
+  { id: 'iphone', title: 'iPhone', emoji: '📱' },
+  { id: 'mac', title: 'MacBook', emoji: '💻' },
+  { id: 'ipad', title: 'iPad', emoji: '📲' },
+  { id: 'watch', title: 'Watch', emoji: '⌚' },
+  { id: 'audio', title: 'AirPods', emoji: '🎧' },
+  { id: 'accessories', title: 'Аксессуары', emoji: '🔌' },
+  { id: 'used', title: 'Б/у', emoji: '♻️' },
+]
+
+const proColors: Color[] = [
+  { name: 'Космический оранжевый', hex: '#e8743b' },
+  { name: 'Глубокий синий', hex: '#2c3e63' },
+  { name: 'Серебристый', hex: '#d9d9de' },
+]
+
+const basicColors: Color[] = [
+  { name: 'Чёрный', hex: '#2b2b2e' },
+  { name: 'Белый', hex: '#f1f1f3' },
+  { name: 'Голубой', hex: '#a9c4e4' },
+  { name: 'Розовый', hex: '#f0c8cf' },
+]
+
+const macColors: Color[] = [
+  { name: 'Небесно-голубой', hex: '#b8cde0' },
+  { name: 'Серебристый', hex: '#d9d9de' },
+  { name: 'Сияющая звезда', hex: '#e9dfcf' },
+  { name: 'Тёмная ночь', hex: '#2e3440' },
+]
+
+const iphoneMemory = (base: number): MemoryOption[] =>
+  [256, 512, 1024]
+    .filter((gb) => gb >= base)
+    .map((gb, i) => ({ label: gb >= 1024 ? `${gb / 1024} ТБ` : `${gb} ГБ`, delta: i * 20000 }))
+
+export const products: Product[] = [
+  {
+    id: 'iphone-17-pro-max',
+    category: 'iphone',
+    title: 'iPhone 17 Pro Max',
+    price: 139990,
+    condition: 'new',
+    colors: proColors,
+    memory: iphoneMemory(256),
+    tags: ['hit'],
+    specs: [
+      ['Экран', '6,9″ Super Retina XDR, 120 Гц'],
+      ['Процессор', 'A19 Pro'],
+      ['Камера', '48 + 48 + 48 Мп, зум 8×'],
+      ['Корпус', 'Алюминий'],
+    ],
+    description: 'Самый большой экран и самая долгая автономность в линейке. Тройная 48-мегапиксельная камера и оптический зум 8×.',
+  },
+  {
+    id: 'iphone-17-pro',
+    category: 'iphone',
+    title: 'iPhone 17 Pro',
+    price: 124990,
+    condition: 'new',
+    colors: proColors,
+    memory: iphoneMemory(256),
+    tags: ['hit'],
+    specs: [
+      ['Экран', '6,3″ Super Retina XDR, 120 Гц'],
+      ['Процессор', 'A19 Pro'],
+      ['Камера', '48 + 48 + 48 Мп'],
+      ['Корпус', 'Алюминий'],
+    ],
+    description: 'Флагман в компактном размере: те же камеры и процессор, что у Pro Max.',
+  },
+  {
+    id: 'iphone-air',
+    category: 'iphone',
+    title: 'iPhone Air',
+    price: 109990,
+    condition: 'new',
+    colors: [
+      { name: 'Небесно-голубой', hex: '#cfe0f0' },
+      { name: 'Светлое золото', hex: '#ecdcc0' },
+      { name: 'Облачно-белый', hex: '#f4f4f2' },
+      { name: 'Космический чёрный', hex: '#26272b' },
+    ],
+    memory: iphoneMemory(256),
+    tags: ['new'],
+    specs: [
+      ['Экран', '6,5″ ProMotion, 120 Гц'],
+      ['Процессор', 'A19 Pro'],
+      ['Толщина', '5,6 мм'],
+      ['Камера', '48 Мп'],
+    ],
+    description: 'Самый тонкий iPhone. Титановая рамка и большой экран при весе всего 165 г.',
+  },
+  {
+    id: 'iphone-17',
+    category: 'iphone',
+    title: 'iPhone 17',
+    price: 84990,
+    condition: 'new',
+    colors: [
+      { name: 'Лавандовый', hex: '#d6cbe6' },
+      { name: 'Шалфей', hex: '#bfcdb4' },
+      { name: 'Туманно-голубой', hex: '#b7c9da' },
+      { name: 'Чёрный', hex: '#2b2b2e' },
+    ],
+    memory: iphoneMemory(256),
+    tags: ['new'],
+    specs: [
+      ['Экран', '6,3″ ProMotion, 120 Гц'],
+      ['Процессор', 'A19'],
+      ['Камера', '48 + 48 Мп'],
+      ['Фронтальная', '18 Мп Center Stage'],
+    ],
+    description: 'Базовая модель, которая наконец получила экран 120 Гц и 256 ГБ памяти по умолчанию.',
+  },
+  {
+    id: 'iphone-16',
+    category: 'iphone',
+    title: 'iPhone 16',
+    price: 69990,
+    oldPrice: 79990,
+    condition: 'new',
+    colors: basicColors,
+    memory: [
+      { label: '128 ГБ', delta: 0 },
+      { label: '256 ГБ', delta: 10000 },
+      { label: '512 ГБ', delta: 30000 },
+    ],
+    tags: ['sale'],
+    specs: [
+      ['Экран', '6,1″ Super Retina XDR'],
+      ['Процессор', 'A18'],
+      ['Камера', '48 + 12 Мп'],
+      ['Кнопка', 'Camera Control'],
+    ],
+    description: 'Отличный выбор по цене: Apple Intelligence, кнопка управления камерой и USB-C.',
+  },
+  {
+    id: 'iphone-16e',
+    category: 'iphone',
+    title: 'iPhone 16e',
+    price: 54990,
+    condition: 'new',
+    colors: basicColors.slice(0, 2),
+    memory: [
+      { label: '128 ГБ', delta: 0 },
+      { label: '256 ГБ', delta: 10000 },
+    ],
+    specs: [
+      ['Экран', '6,1″ OLED'],
+      ['Процессор', 'A18'],
+      ['Камера', '48 Мп'],
+      ['Разъём', 'USB-C'],
+    ],
+    description: 'Самый доступный новый iPhone с современным процессором.',
+  },
+  {
+    id: 'macbook-air-13-m4',
+    category: 'mac',
+    title: 'MacBook Air 13″ M4',
+    price: 99990,
+    condition: 'new',
+    colors: macColors,
+    memory: [
+      { label: '16 / 256 ГБ', delta: 0 },
+      { label: '16 / 512 ГБ', delta: 20000 },
+      { label: '24 / 512 ГБ', delta: 40000 },
+    ],
+    tags: ['hit'],
+    specs: [
+      ['Экран', '13,6″ Liquid Retina'],
+      ['Чип', 'Apple M4, 10 ядер CPU'],
+      ['Автономность', 'до 18 ч'],
+      ['Вес', '1,24 кг'],
+    ],
+    description: 'Тихий, лёгкий и быстрый ноутбук для учёбы и работы. Без вентилятора.',
+  },
+  {
+    id: 'macbook-air-15-m4',
+    category: 'mac',
+    title: 'MacBook Air 15″ M4',
+    price: 124990,
+    condition: 'new',
+    colors: macColors,
+    memory: [
+      { label: '16 / 256 ГБ', delta: 0 },
+      { label: '16 / 512 ГБ', delta: 20000 },
+      { label: '24 / 512 ГБ', delta: 40000 },
+    ],
+    specs: [
+      ['Экран', '15,3″ Liquid Retina'],
+      ['Чип', 'Apple M4'],
+      ['Автономность', 'до 18 ч'],
+      ['Динамики', '6 шт.'],
+    ],
+    description: 'Большой экран в тонком корпусе. Удобно для таблиц, монтажа и кино.',
+  },
+  {
+    id: 'macbook-pro-14-m5',
+    category: 'mac',
+    title: 'MacBook Pro 14″ M5',
+    price: 179990,
+    condition: 'new',
+    colors: [
+      { name: 'Космический чёрный', hex: '#2a2a2d' },
+      { name: 'Серебристый', hex: '#d9d9de' },
+    ],
+    memory: [
+      { label: '16 / 512 ГБ', delta: 0 },
+      { label: '24 / 1 ТБ', delta: 40000 },
+    ],
+    tags: ['new'],
+    specs: [
+      ['Экран', '14,2″ Liquid Retina XDR'],
+      ['Чип', 'Apple M5'],
+      ['Автономность', 'до 24 ч'],
+      ['Порты', 'HDMI, SDXC, 3× TB'],
+    ],
+    description: 'Профессиональный ноутбук с лучшим экраном Apple и активным охлаждением.',
+  },
+  {
+    id: 'ipad-pro-11-m5',
+    category: 'ipad',
+    title: 'iPad Pro 11″ M5',
+    price: 109990,
+    condition: 'new',
+    colors: [
+      { name: 'Космический чёрный', hex: '#2a2a2d' },
+      { name: 'Серебристый', hex: '#d9d9de' },
+    ],
+    memory: [
+      { label: '256 ГБ', delta: 0 },
+      { label: '512 ГБ', delta: 20000 },
+    ],
+    tags: ['new'],
+    specs: [
+      ['Экран', '11″ Ultra Retina XDR (OLED)'],
+      ['Чип', 'Apple M5'],
+      ['Толщина', '5,3 мм'],
+      ['Поддержка', 'Apple Pencil Pro'],
+    ],
+    description: 'Самый мощный и тонкий iPad с OLED-экраном.',
+  },
+  {
+    id: 'ipad-air-11-m3',
+    category: 'ipad',
+    title: 'iPad Air 11″ M3',
+    price: 64990,
+    condition: 'new',
+    colors: [
+      { name: 'Голубой', hex: '#b9cfe4' },
+      { name: 'Фиолетовый', hex: '#cdc3e3' },
+      { name: 'Сияющая звезда', hex: '#e9dfcf' },
+      { name: 'Серый космос', hex: '#55585e' },
+    ],
+    memory: [
+      { label: '128 ГБ', delta: 0 },
+      { label: '256 ГБ', delta: 10000 },
+    ],
+    tags: ['hit'],
+    specs: [
+      ['Экран', '11″ Liquid Retina'],
+      ['Чип', 'Apple M3'],
+      ['Поддержка', 'Apple Pencil Pro'],
+      ['Разъём', 'USB-C'],
+    ],
+    description: 'Универсальный планшет для учёбы, работы, творчества и игр.',
+  },
+  {
+    id: 'ipad-11-a16',
+    category: 'ipad',
+    title: 'iPad 11″ (A16)',
+    price: 39990,
+    condition: 'new',
+    colors: [
+      { name: 'Голубой', hex: '#b9cfe4' },
+      { name: 'Розовый', hex: '#f0c8cf' },
+      { name: 'Жёлтый', hex: '#f2e1a0' },
+      { name: 'Серебристый', hex: '#d9d9de' },
+    ],
+    memory: [
+      { label: '128 ГБ', delta: 0 },
+      { label: '256 ГБ', delta: 10000 },
+    ],
+    specs: [
+      ['Экран', '11″ Liquid Retina'],
+      ['Чип', 'A16'],
+      ['Камера', '12 Мп'],
+      ['Разъём', 'USB-C'],
+    ],
+    description: 'Доступный iPad для детей, учёбы и сериалов.',
+  },
+  {
+    id: 'ipad-mini-a17',
+    category: 'ipad',
+    title: 'iPad mini (A17 Pro)',
+    price: 54990,
+    condition: 'new',
+    colors: [
+      { name: 'Голубой', hex: '#b9cfe4' },
+      { name: 'Фиолетовый', hex: '#cdc3e3' },
+      { name: 'Серый космос', hex: '#55585e' },
+    ],
+    memory: [
+      { label: '128 ГБ', delta: 0 },
+      { label: '256 ГБ', delta: 10000 },
+    ],
+    specs: [
+      ['Экран', '8,3″ Liquid Retina'],
+      ['Чип', 'A17 Pro'],
+      ['Вес', '293 г'],
+      ['Поддержка', 'Apple Pencil Pro'],
+    ],
+    description: 'Помещается в карман куртки. Идеален для чтения и заметок.',
+  },
+  {
+    id: 'watch-ultra-3',
+    category: 'watch',
+    title: 'Apple Watch Ultra 3',
+    price: 89990,
+    condition: 'new',
+    colors: [
+      { name: 'Натуральный титан', hex: '#c9c2b6' },
+      { name: 'Чёрный титан', hex: '#2a2a2d' },
+    ],
+    tags: ['new'],
+    specs: [
+      ['Корпус', '49 мм, титан'],
+      ['Экран', 'LTPO3, до 3000 нит'],
+      ['Автономность', 'до 42 ч'],
+      ['Связь', 'Спутниковая SOS'],
+    ],
+    description: 'Часы для спорта и путешествий: прочный титан, яркий экран и долгая батарея.',
+  },
+  {
+    id: 'watch-s11',
+    category: 'watch',
+    title: 'Apple Watch Series 11',
+    price: 44990,
+    condition: 'new',
+    colors: [
+      { name: 'Тёмная ночь', hex: '#2e3440' },
+      { name: 'Серебристый', hex: '#d9d9de' },
+      { name: 'Розовое золото', hex: '#e8c4b8' },
+    ],
+    memory: [
+      { label: '42 мм', delta: 0 },
+      { label: '46 мм', delta: 3000 },
+    ],
+    tags: ['hit'],
+    specs: [
+      ['Экран', 'Always-On Retina'],
+      ['Автономность', 'до 24 ч'],
+      ['Здоровье', 'ЭКГ, SpO₂, сон'],
+      ['Защита', 'WR50'],
+    ],
+    description: 'Самые популярные умные часы: здоровье, тренировки и уведомления.',
+  },
+  {
+    id: 'watch-se-3',
+    category: 'watch',
+    title: 'Apple Watch SE 3',
+    price: 27990,
+    condition: 'new',
+    colors: [
+      { name: 'Тёмная ночь', hex: '#2e3440' },
+      { name: 'Сияющая звезда', hex: '#e9dfcf' },
+    ],
+    memory: [
+      { label: '40 мм', delta: 0 },
+      { label: '44 мм', delta: 3000 },
+    ],
+    specs: [
+      ['Экран', 'Always-On Retina'],
+      ['Чип', 'S10'],
+      ['Здоровье', 'Пульс, сон'],
+      ['Защита', 'WR50'],
+    ],
+    description: 'Доступные Apple Watch со всеми базовыми функциями.',
+  },
+  {
+    id: 'airpods-pro-3',
+    category: 'audio',
+    title: 'AirPods Pro 3',
+    price: 26990,
+    condition: 'new',
+    colors: [{ name: 'Белый', hex: '#f4f4f2' }],
+    tags: ['hit'],
+    specs: [
+      ['Шумоподавление', 'Активное, 2× эффективнее'],
+      ['Автономность', 'до 8 ч'],
+      ['Датчик', 'Пульс'],
+      ['Защита', 'IP57'],
+    ],
+    description: 'Лучшее шумоподавление в истории AirPods и измерение пульса на тренировках.',
+  },
+  {
+    id: 'airpods-4-anc',
+    category: 'audio',
+    title: 'AirPods 4 с шумоподавлением',
+    price: 18990,
+    condition: 'new',
+    colors: [{ name: 'Белый', hex: '#f4f4f2' }],
+    specs: [
+      ['Шумоподавление', 'Активное'],
+      ['Автономность', 'до 5 ч'],
+      ['Кейс', 'USB-C, беспроводная зарядка'],
+      ['Защита', 'IP54'],
+    ],
+    description: 'Открытые наушники без силиконовых вкладышей, но с шумоподавлением.',
+  },
+  {
+    id: 'airpods-max',
+    category: 'audio',
+    title: 'AirPods Max (USB-C)',
+    price: 52990,
+    oldPrice: 59990,
+    condition: 'new',
+    colors: [
+      { name: 'Тёмная ночь', hex: '#2e3440' },
+      { name: 'Голубой', hex: '#b9cfe4' },
+      { name: 'Сияющая звезда', hex: '#e9dfcf' },
+    ],
+    tags: ['sale'],
+    specs: [
+      ['Тип', 'Полноразмерные'],
+      ['Автономность', 'до 20 ч'],
+      ['Звук', 'Пространственное аудио'],
+      ['Разъём', 'USB-C'],
+    ],
+    description: 'Премиальные полноразмерные наушники с отличным звуком.',
+  },
+  {
+    id: 'magsafe-charger',
+    category: 'accessories',
+    title: 'Зарядка MagSafe 25 Вт',
+    price: 4990,
+    condition: 'new',
+    colors: [{ name: 'Белый', hex: '#f4f4f2' }],
+    specs: [
+      ['Мощность', 'до 25 Вт'],
+      ['Кабель', '1 м, USB-C'],
+      ['Совместимость', 'iPhone 12 и новее'],
+    ],
+    description: 'Магнитная беспроводная зарядка. Быстро заряжает iPhone 16 и 17.',
+  },
+  {
+    id: 'adapter-20w',
+    category: 'accessories',
+    title: 'Адаптер питания USB-C 20 Вт',
+    price: 2490,
+    condition: 'new',
+    colors: [{ name: 'Белый', hex: '#f4f4f2' }],
+    specs: [
+      ['Мощность', '20 Вт'],
+      ['Разъём', 'USB-C'],
+    ],
+    description: 'Оригинальный блок для быстрой зарядки iPhone и iPad.',
+  },
+  {
+    id: 'case-17-pro',
+    category: 'accessories',
+    title: 'Чехол MagSafe для iPhone 17 Pro',
+    price: 3490,
+    condition: 'new',
+    colors: [
+      { name: 'Прозрачный', hex: '#e6eef5' },
+      { name: 'Чёрный', hex: '#2b2b2e' },
+      { name: 'Синий', hex: '#3b5998' },
+    ],
+    specs: [
+      ['Материал', 'Поликарбонат'],
+      ['MagSafe', 'Да'],
+    ],
+    description: 'Защищает от царапин и не мешает беспроводной зарядке.',
+  },
+  {
+    id: 'pencil-pro',
+    category: 'accessories',
+    title: 'Apple Pencil Pro',
+    price: 12990,
+    condition: 'new',
+    colors: [{ name: 'Белый', hex: '#f4f4f2' }],
+    specs: [
+      ['Совместимость', 'iPad Pro M4+, Air M2+, mini A17 Pro'],
+      ['Функции', 'Сжатие, вращение, тактильный отклик'],
+    ],
+    description: 'Стилус для рисования и заметок с поддержкой жестов.',
+  },
+  {
+    id: 'used-iphone-15-pro',
+    category: 'iphone',
+    title: 'iPhone 15 Pro',
+    price: 64990,
+    condition: 'used',
+    colors: [{ name: 'Натуральный титан', hex: '#c9c2b6' }],
+    memory: [{ label: '256 ГБ', delta: 0 }],
+    used: { battery: 89, grade: 'A', kit: 'Коробка, кабель' },
+    specs: [
+      ['Экран', '6,1″ ProMotion'],
+      ['Процессор', 'A17 Pro'],
+      ['Корпус', 'Титан'],
+    ],
+    description: 'Отличное состояние, без сколов. Проверен мастером, гарантия магазина 3 месяца.',
+  },
+  {
+    id: 'used-iphone-14-pro',
+    category: 'iphone',
+    title: 'iPhone 14 Pro',
+    price: 47990,
+    condition: 'used',
+    colors: [{ name: 'Тёмно-фиолетовый', hex: '#4b3f5c' }],
+    memory: [{ label: '128 ГБ', delta: 0 }],
+    used: { battery: 84, grade: 'A', kit: 'Только телефон' },
+    specs: [
+      ['Экран', '6,1″ ProMotion'],
+      ['Процессор', 'A16 Bionic'],
+      ['Камера', '48 Мп'],
+    ],
+    description: 'Есть Dynamic Island и Always-On. Небольшие следы использования на рамке.',
+  },
+  {
+    id: 'used-iphone-13',
+    category: 'iphone',
+    title: 'iPhone 13',
+    price: 29990,
+    condition: 'used',
+    colors: [{ name: 'Синий', hex: '#3b5b8a' }],
+    memory: [{ label: '128 ГБ', delta: 0 }],
+    used: { battery: 86, grade: 'B', kit: 'Коробка' },
+    specs: [
+      ['Экран', '6,1″ OLED'],
+      ['Процессор', 'A15 Bionic'],
+    ],
+    description: 'Рабочая лошадка по хорошей цене. Мелкие царапины на корпусе.',
+  },
+  {
+    id: 'used-macbook-air-m1',
+    category: 'mac',
+    title: 'MacBook Air 13″ M1',
+    price: 44990,
+    condition: 'used',
+    colors: [{ name: 'Серый космос', hex: '#55585e' }],
+    memory: [{ label: '8 / 256 ГБ', delta: 0 }],
+    used: { battery: 91, grade: 'A', kit: 'Зарядка' },
+    specs: [
+      ['Экран', '13,3″ Retina'],
+      ['Чип', 'Apple M1'],
+      ['Циклы', '212'],
+    ],
+    description: 'Легендарный M1 до сих пор отлично справляется с учёбой и офисом.',
+  },
+  {
+    id: 'used-ipad-air-m1',
+    category: 'ipad',
+    title: 'iPad Air 5 (M1)',
+    price: 34990,
+    condition: 'used',
+    colors: [{ name: 'Голубой', hex: '#b9cfe4' }],
+    memory: [{ label: '64 ГБ', delta: 0 }],
+    used: { battery: 88, grade: 'A', kit: 'Коробка, кабель' },
+    specs: [
+      ['Экран', '10,9″ Liquid Retina'],
+      ['Чип', 'Apple M1'],
+    ],
+    description: 'Как новый, всегда был в чехле и с защитным стеклом.',
+  },
+]
+
+export const findProduct = (id: string) => products.find((p) => p.id === id)
+
+export type RepairService = { id: string; title: string; from: number; time: string }
+
+export const repairDevices = ['iPhone', 'iPad', 'MacBook', 'Apple Watch', 'AirPods'] as const
+
+export const repairServices: RepairService[] = [
+  { id: 'battery', title: 'Замена аккумулятора', from: 2990, time: 'от 30 мин' },
+  { id: 'screen', title: 'Замена дисплея', from: 6990, time: 'от 1 ч' },
+  { id: 'glass', title: 'Замена заднего стекла', from: 3990, time: 'от 2 ч' },
+  { id: 'port', title: 'Не заряжается / разъём', from: 1990, time: 'от 40 мин' },
+  { id: 'camera', title: 'Ремонт камеры', from: 3490, time: 'от 1 ч' },
+  { id: 'water', title: 'После попадания воды', from: 1490, time: 'диагностика' },
+  { id: 'other', title: 'Другое / не знаю', from: 0, time: 'бесплатная диагностика' },
+]
