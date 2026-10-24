@@ -1,6 +1,7 @@
-import { findProduct } from '../data/products'
-import { DeviceArt } from '../components/DeviceArt'
-import { Empty, Header, MainButton } from '../components/ui'
+import { ProductImage } from '../components/ProductImage'
+import { Icon } from '../components/Icon'
+import { Empty, Header, MainButton, mainButtonSpace, PillButton } from '../components/ui'
+import { useCatalog } from '../lib/catalog'
 import { cartCount, cartTotal, formatPrice, useStore } from '../lib/store'
 import { tg } from '../lib/telegram'
 
@@ -10,6 +11,7 @@ export function Cart() {
   const clearCart = useStore((s) => s.clearCart)
   const navigate = useStore((s) => s.navigate)
   const reset = useStore((s) => s.reset)
+  const products = useCatalog((s) => s.products)
 
   if (!cart.length)
     return (
@@ -20,9 +22,7 @@ export function Cart() {
           title="Корзина пуста"
           text="Загляните в каталог, там много интересного"
           action={
-            <button onClick={() => reset({ name: 'catalog' })} className="rounded-xl bg-accent px-5 py-2.5 font-semibold text-accent-text">
-              В каталог
-            </button>
+            <PillButton onClick={() => reset()}>В каталог</PillButton>
           }
         />
       </>
@@ -31,34 +31,39 @@ export function Cart() {
   const total = cartTotal(cart)
 
   return (
-    <div className="pb-28">
+    <div className={mainButtonSpace}>
       <Header
         title="Корзина"
         right={
-          <button onClick={clearCart} className="text-sm text-danger">
+          <button onClick={clearCart} className="text-[15px] text-danger">
             Очистить
           </button>
         }
       />
       <div className="space-y-2.5 px-4">
         {cart.map((item) => {
-          const product = findProduct(item.productId)
-          if (!product) return null
-          const hex = product.colors.find((c) => c.name === item.color)?.hex
+          const product = products.find((p) => p.id === item.productId)
+          const hex = product?.colors.find((c) => c.name === item.color)?.hex
           return (
-            <div key={item.key} className="flex gap-3 rounded-2xl bg-section p-3">
+            <div key={item.key} className="card flex gap-3 p-3">
               <button
-                onClick={() => navigate({ name: 'product', id: product.id })}
-                className="h-20 w-20 shrink-0 rounded-xl bg-bg2"
+                onClick={() => product && navigate({ name: 'product', id: product.id })}
+                className="h-20 w-20 shrink-0 overflow-hidden rounded-2xl"
               >
-                <DeviceArt product={product} color={hex} className="h-full w-full p-1" />
+                {product ? (
+                  <ProductImage product={product} photo={product.photos[0]} color={hex} />
+                ) : (
+                  <div className="grid h-full w-full place-items-center bg-fill text-hint">
+                    <Icon name="box" />
+                  </div>
+                )}
               </button>
               <div className="flex min-w-0 flex-1 flex-col">
-                <div className="truncate font-medium">{product.title}</div>
+                <div className="truncate text-[16px] font-semibold">{item.title}</div>
                 <div className="truncate text-xs text-hint">{[item.memory, item.color].filter(Boolean).join(' · ')}</div>
                 <div className="mt-auto flex items-center justify-between">
                   <span className="font-bold">{formatPrice(item.price * item.qty)}</span>
-                  <div className="flex items-center gap-3 rounded-full bg-bg2 px-1">
+                  <div className="flex items-center gap-3 rounded-full bg-fill px-1">
                     <button
                       onClick={() => {
                         tg.haptic.select()
@@ -88,7 +93,7 @@ export function Cart() {
         })}
       </div>
 
-      <div className="mx-4 mt-4 space-y-2 rounded-2xl bg-section p-4 text-sm">
+      <div className="card mx-4 mt-4 space-y-2 p-4 text-[15px]">
         <div className="flex justify-between">
           <span className="text-hint">Товары ({cartCount(cart)})</span>
           <span>{formatPrice(total)}</span>
@@ -97,7 +102,7 @@ export function Cart() {
           <span className="text-hint">Доставка</span>
           <span>{total >= 30000 ? 'бесплатно' : 'при оформлении'}</span>
         </div>
-        <div className="flex justify-between border-t border-hint/15 pt-2 text-base font-bold">
+        <div className="flex justify-between border-t border-sep pt-2 text-base font-bold">
           <span>Итого</span>
           <span>{formatPrice(total)}</span>
         </div>

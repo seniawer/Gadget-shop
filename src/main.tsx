@@ -5,7 +5,11 @@ import App from './App'
 import { tg } from './lib/telegram'
 
 tg.init()
-if (tg.isTelegram) document.documentElement.classList.add('tg')
+const root = document.documentElement
+if (tg.isTelegram) root.classList.add('tg')
+const applyTheme = () => root.classList.toggle('dark', tg.isDark)
+applyTheme()
+tg.onThemeChange(applyTheme)
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>

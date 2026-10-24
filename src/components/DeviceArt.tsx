@@ -1,9 +1,8 @@
-import type { Product } from '../data/products'
+import type { Product } from '../../shared/catalog'
 
-// Векторная «фотография» товара: силуэт устройства, окрашенный в выбранный цвет.
-// Для настоящего магазина замените на фото товара.
+// Заглушка вместо фото: силуэт устройства, окрашенный в выбранный цвет.
 
-type Props = { product: Product; color?: string; className?: string }
+type Props = { product: Pick<Product, 'id' | 'category' | 'title' | 'colors'>; color?: string; className?: string }
 
 const shade = (hex: string, amount: number) => {
   const n = parseInt(hex.slice(1), 16)
@@ -12,11 +11,11 @@ const shade = (hex: string, amount: number) => {
 }
 
 export function DeviceArt({ product, color, className = '' }: Props) {
-  const hex = color ?? product.colors[0].hex
+  const hex = color ?? product.colors[0]?.hex ?? '#c7c7cc'
   const body = hex
   const edge = shade(hex, -40)
   const glass = '#0d0e12'
-  const id = `g-${product.id}-${hex.slice(1)}`
+  const id = `g-${product.id.replace(/[^a-z0-9-]/gi, '')}-${hex.slice(1)}`
 
   const art = (() => {
     switch (product.category) {

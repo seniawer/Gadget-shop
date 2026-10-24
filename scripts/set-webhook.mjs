@@ -19,5 +19,5 @@ const call = async (method, body) => {
 const url = WEBAPP_URL.replace(/\/$/, '')
 await call('setWebhook', { url: `${url}/api/bot`, secret_token: WEBHOOK_SECRET || undefined, allowed_updates: ['message'] })
 await call('setChatMenuButton', { menu_button: { type: 'web_app', text: 'Магазин', web_app: { url } } })
-await call('setMyDescription', { description: 'Техника Apple: новые и б/у устройства, аксессуары и ремонт. Нажмите «Начать», чтобы открыть каталог.' })
-await call('setMyShortDescription', { short_description: 'Магазин техники Apple и ремонт' })
+await call('setMyDescription', { description: 'ГАДЖЕТ | ТЕХНИКА | РЕМОНТ | АКСЕССУАРЫ. Новые iPhone, iPad и MacBook, предзаказ новинок, б/у, аксессуары и ремонт. Нажмите «Начать», чтобы открыть каталог.' })
+await call('setMyShortDescription', { short_description: 'Техника Apple, б/у, аксессуары и ремонт' })

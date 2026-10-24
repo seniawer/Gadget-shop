@@ -1,4 +1,4 @@
-import { callBot, escapeHtml as e, verifyInitData } from './_lib/telegram.js'
+import { callBot, escapeHtml as e, verifyInitData } from '../telegram'
 
 type Item = { title: string; color: string; memory?: string; qty: number; price: number }
 

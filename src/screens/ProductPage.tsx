@@ -1,13 +1,18 @@
 import { useState } from 'react'
-import { findProduct } from '../data/products'
-import { DeviceArt } from '../components/DeviceArt'
-import { Empty, Header, MainButton } from '../components/ui'
+import { availability, canBuy, categoryTitle } from '../../shared/catalog'
+import { Gallery } from '../components/Gallery'
+import { Icon } from '../components/Icon'
+import { ManagerButtons } from '../components/ManagerButtons'
+import { StatusBadge } from '../components/StatusBadge'
+import { Empty, Header, MainButton, mainButtonSpace, Spinner } from '../components/ui'
+import { shop, telegramUrl } from '../config'
+import { useCatalog, useProduct } from '../lib/catalog'
 import { formatPrice, useStore } from '../lib/store'
 import { tg } from '../lib/telegram'
-import { shop } from '../lib/config'
 
 export function ProductPage({ id }: { id: string }) {
-  const product = findProduct(id)
+  const product = useProduct(id)
+  const status = useCatalog((s) => s.status)
   const addToCart = useStore((s) => s.addToCart)
   const navigate = useStore((s) => s.navigate)
   const isFav = useStore((s) => s.favorites.includes(id))
@@ -16,72 +21,97 @@ export function ProductPage({ id }: { id: string }) {
   const [memIdx, setMemIdx] = useState(0)
   const [added, setAdded] = useState(false)
 
-  if (!product) return <Empty emoji="🤷" title="Товар не найден" text="Возможно, его уже купили" />
+  if (!product)
+    return (
+      <>
+        <Header title="" />
+        {status === 'loading' ? (
+          <div className="grid place-items-center pt-32 text-hint">
+            <Spinner />
+          </div>
+        ) : (
+          <Empty emoji="🤷" title="Товар не найден" text="Возможно, его уже купили или убрали из каталога" />
+        )}
+      </>
+    )
 
   const color = product.colors[colorIdx]
   const memory = product.memory?.[memIdx]
   const price = product.price + (memory?.delta ?? 0)
+  const fullTitle = [product.title, product.memory && product.memory.length > 1 ? memory?.label : '', product.colors.length > 1 ? color?.name : '']
+    .filter(Boolean)
+    .join(', ')
+  const managerText = `Здравствуйте! Интересует: ${fullTitle}, ${formatPrice(price)}`
+  const state = availability(product).kind
 
-  const add = () => {
-    if (added) {
-      navigate({ name: 'cart' })
-      return
-    }
-    addToCart({ productId: product.id, color: color.name, memory: memory?.label, price })
-    tg.haptic.success()
-    setAdded(true)
+  const mainAction = (() => {
+    if (canBuy(product))
+      return {
+        text: added ? 'Перейти в корзину' : `В корзину · ${formatPrice(price)}`,
+        onClick: () => {
+          if (added) return navigate({ name: 'cart' })
+          addToCart({ productId: product.id, title: product.title, color: color?.name ?? '', memory: memory?.label, price })
+          tg.haptic.success()
+          setAdded(true)
+        },
+      }
+    const text = state === 'preorder' ? 'Оформить предзаказ' : 'Узнать о поступлении'
+    const message =
+      state === 'preorder'
+        ? `Здравствуйте! Хочу оформить предзаказ: ${fullTitle}, ${formatPrice(price)}`
+        : `Здравствуйте! Сообщите, пожалуйста, когда появится: ${fullTitle}`
+    return { text, onClick: () => tg.openTelegramLink(telegramUrl(shop.managers[0], message)) }
+  })()
+
+  const pick = (fn: () => void) => {
+    tg.haptic.select()
+    fn()
+    setAdded(false)
   }
 
   return (
-    <div className="pb-28">
+    <div className={mainButtonSpace}>
       <Header
         title=""
         right={
           <button
-            onClick={() => {
-              tg.haptic.select()
-              toggleFavorite(id)
-            }}
-            className="text-2xl"
-            aria-label="В избранное"
+            onClick={() => pick(() => toggleFavorite(id))}
+            className={`grid h-10 w-10 place-items-center rounded-full ${isFav ? 'text-[#ff375f]' : 'text-hint'}`}
+            aria-label={isFav ? 'Убрать из избранного' : 'В избранное'}
           >
-            {isFav ? '❤️' : '🤍'}
+            <Icon name="heart" size={24} filled={isFav} />
           </button>
         }
       />
-      <div className="mx-4 aspect-[4/3] rounded-3xl bg-section">
-        <DeviceArt product={product} color={color.hex} className="h-full w-full p-4" />
-      </div>
 
-      <div className="mt-4 px-4">
-        {product.condition === 'used' && (
-          <span className="mb-2 inline-block rounded-md bg-sky-500 px-2 py-0.5 text-xs font-bold text-white">Б/у, проверен</span>
-        )}
-        <h1 className="text-2xl leading-tight font-extrabold">{product.title}</h1>
+      <Gallery product={product} color={color?.hex} />
+
+      <div className="mt-5 px-4">
+        <div className="flex flex-wrap items-center gap-2">
+          <StatusBadge product={product} />
+          <span className="text-[13px] text-hint">
+            {categoryTitle(product.category)} · {product.condition === 'used' ? 'Б/У' : 'Новый'}
+          </span>
+        </div>
+        <h1 className="mt-2 text-[28px] leading-[1.15] font-bold tracking-tight">{product.title}</h1>
         <div className="mt-2 flex items-baseline gap-2">
-          <span className="text-2xl font-bold">{formatPrice(price)}</span>
-          {product.oldPrice && <span className="text-hint line-through">{formatPrice(product.oldPrice + (memory?.delta ?? 0))}</span>}
+          <span className="text-[26px] font-bold tracking-tight">{formatPrice(price)}</span>
+          {product.oldPrice && <span className="text-[17px] text-hint line-through">{formatPrice(product.oldPrice + (memory?.delta ?? 0))}</span>}
         </div>
       </div>
 
       {product.colors.length > 1 && (
-        <div className="mt-5 px-4">
-          <div className="text-sm text-hint">
-            Цвет: <span className="text-text">{color.name}</span>
+        <div className="mt-6 px-4">
+          <div className="text-[15px] text-hint">
+            Цвет: <span className="font-medium text-text">{color?.name}</span>
           </div>
-          <div className="mt-2 flex gap-3">
+          <div className="mt-2.5 flex flex-wrap gap-3">
             {product.colors.map((c, i) => (
               <button
                 key={c.name}
-                onClick={() => {
-                  tg.haptic.select()
-                  setColorIdx(i)
-                  setAdded(false)
-                }}
+                onClick={() => pick(() => setColorIdx(i))}
                 aria-label={c.name}
-                className={`h-9 w-9 rounded-full border border-black/10 ring-offset-2 ring-offset-bg2 transition ${
-                  i === colorIdx ? 'ring-2 ring-accent' : ''
-                }`}
+                className={`h-10 w-10 rounded-full border border-black/10 ring-offset-2 ring-offset-bg2 ${i === colorIdx ? 'ring-2 ring-accent' : ''}`}
                 style={{ background: c.hex }}
               />
             ))}
@@ -90,19 +120,15 @@ export function ProductPage({ id }: { id: string }) {
       )}
 
       {product.memory && product.memory.length > 1 && (
-        <div className="mt-5 px-4">
-          <div className="text-sm text-hint">{product.category === 'watch' ? 'Размер' : 'Память'}</div>
-          <div className="mt-2 flex flex-wrap gap-2">
+        <div className="mt-6 px-4">
+          <div className="text-[15px] text-hint">{product.category === 'watch' ? 'Размер' : 'Память'}</div>
+          <div className="mt-2.5 flex flex-wrap gap-2">
             {product.memory.map((m, i) => (
               <button
                 key={m.label}
-                onClick={() => {
-                  tg.haptic.select()
-                  setMemIdx(i)
-                  setAdded(false)
-                }}
-                className={`rounded-xl border px-4 py-2 text-sm font-semibold transition ${
-                  i === memIdx ? 'border-accent bg-accent/10 text-link' : 'border-transparent bg-section'
+                onClick={() => pick(() => setMemIdx(i))}
+                className={`rounded-2xl border-2 px-4 py-2.5 text-[15px] font-semibold transition-colors ${
+                  i === memIdx ? 'border-accent text-link' : 'card border-transparent'
                 }`}
               >
                 {m.label}
@@ -112,49 +138,51 @@ export function ProductPage({ id }: { id: string }) {
         </div>
       )}
 
-      {product.used && (
-        <div className="mx-4 mt-5 grid grid-cols-3 gap-2 text-center">
-          <div className="rounded-2xl bg-section p-3">
-            <div className="text-lg font-bold">{product.used.battery}%</div>
-            <div className="text-xs text-hint">Аккумулятор</div>
-          </div>
-          <div className="rounded-2xl bg-section p-3">
-            <div className="text-lg font-bold">{product.used.grade}</div>
-            <div className="text-xs text-hint">Состояние</div>
-          </div>
-          <div className="rounded-2xl bg-section p-3">
-            <div className="text-lg font-bold">3 мес</div>
-            <div className="text-xs text-hint">Гарантия</div>
-          </div>
-          <div className="col-span-3 rounded-2xl bg-section p-3 text-left text-sm">
-            <span className="text-hint">Комплект: </span>
-            {product.used.kit}
-          </div>
+      {product.condition === 'used' && (
+        <div className="mx-4 mt-6 grid grid-cols-3 gap-2 text-center">
+          <Stat value={product.used?.battery ? `${product.used.battery}%` : '—'} label="Аккумулятор" />
+          <Stat value={product.used?.grade || '—'} label="Состояние" />
+          <Stat value={shop.warrantyUsed} label="Гарантия" />
+          {product.used?.kit && (
+            <div className="card col-span-3 px-4 py-3 text-left text-[15px]">
+              <span className="text-hint">Комплект: </span>
+              {product.used.kit}
+            </div>
+          )}
         </div>
       )}
 
-      <p className="mt-5 px-4 text-[15px] leading-relaxed">{product.description}</p>
+      {product.description && <p className="mt-6 px-4 text-[17px] leading-relaxed whitespace-pre-line">{product.description}</p>}
 
-      <div className="mx-4 mt-5 overflow-hidden rounded-2xl bg-section">
-        {product.specs.map(([k, v]) => (
-          <div key={k} className="flex justify-between gap-4 border-b border-hint/15 px-4 py-3 text-sm last:border-0">
-            <span className="text-hint">{k}</span>
-            <span className="text-right font-medium">{v}</span>
-          </div>
-        ))}
+      {product.specs.length > 0 && (
+        <div className="card mx-4 mt-6 overflow-hidden">
+          {product.specs.map(([k, v]) => (
+            <div key={k} className="flex justify-between gap-4 border-b border-sep px-4 py-3 text-[15px] last:border-0">
+              <span className="text-hint">{k}</span>
+              <span className="text-right font-medium">{v}</span>
+            </div>
+          ))}
+        </div>
+      )}
+
+      <div className="mt-6 px-4">
+        <div className="text-[17px] font-semibold">Остались вопросы? 💬</div>
+        <div className="mt-0.5 text-[14px] text-hint">
+          {shop.responseTime}, {shop.hours.toLowerCase()}
+        </div>
+        <ManagerButtons text={managerText} className="mt-3" />
       </div>
 
-      <div className="mx-4 mt-3 space-y-2 rounded-2xl bg-section p-4 text-sm">
-        <div>🚚 Доставка по городу сегодня или завтра</div>
-        <div>🏬 {shop.address}</div>
-        <div>🛡️ Официальная гарантия, проверка при получении</div>
-      </div>
+      <MainButton text={mainAction.text} onClick={mainAction.onClick} />
+    </div>
+  )
+}
 
-      <button onClick={() => tg.openChat(shop.manager)} className="mx-4 mt-4 text-sm font-semibold text-link">
-        Задать вопрос о товаре
-      </button>
-
-      <MainButton text={added ? 'Перейти в корзину' : `В корзину · ${formatPrice(price)}`} onClick={add} />
+function Stat({ value, label }: { value: string; label: string }) {
+  return (
+    <div className="card px-2 py-3">
+      <div className="text-[19px] font-bold tracking-tight">{value}</div>
+      <div className="text-[12px] text-hint">{label}</div>
     </div>
   )
 }

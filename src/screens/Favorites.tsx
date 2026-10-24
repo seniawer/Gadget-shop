@@ -1,11 +1,12 @@
-import { products } from '../data/products'
+import { useCatalog } from '../lib/catalog'
 import { ProductGrid } from '../components/ProductCard'
-import { Empty, Header } from '../components/ui'
+import { Empty, Header, PillButton } from '../components/ui'
 import { useStore } from '../lib/store'
 
 export function Favorites() {
   const favorites = useStore((s) => s.favorites)
   const reset = useStore((s) => s.reset)
+  const products = useCatalog((s) => s.products)
   const list = products.filter((p) => favorites.includes(p.id))
 
   return (
@@ -19,9 +20,7 @@ export function Favorites() {
           title="Пока пусто"
           text="Нажимайте на сердечко у товаров, чтобы сохранить их здесь"
           action={
-            <button onClick={() => reset({ name: 'catalog' })} className="rounded-xl bg-accent px-5 py-2.5 font-semibold text-accent-text">
-              В каталог
-            </button>
+            <PillButton onClick={() => reset()}>В каталог</PillButton>
           }
         />
       )}

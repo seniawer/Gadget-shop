@@ -1,40 +1,9 @@
-// Демо-каталог. Цены ориентировочные и нужны только для портфолио.
+// Стартовый каталог. При первом запуске сервер переносит эти товары в хранилище,
+// дальше ими управляют из админки. Цены ориентировочные.
 
-export type CategoryId = 'iphone' | 'ipad' | 'mac' | 'watch' | 'audio' | 'accessories' | 'used'
+import type { Color, MemoryOption, Product } from './catalog'
 
-export type Category = {
-  id: CategoryId
-  title: string
-  emoji: string
-}
-
-export type Color = { name: string; hex: string }
-export type MemoryOption = { label: string; delta: number }
-
-export type Product = {
-  id: string
-  category: Exclude<CategoryId, 'used'>
-  title: string
-  price: number
-  oldPrice?: number
-  condition: 'new' | 'used'
-  colors: Color[]
-  memory?: MemoryOption[]
-  specs: [string, string][]
-  description: string
-  tags?: ('hit' | 'new' | 'sale')[]
-  used?: { battery: number; grade: 'A' | 'B'; kit: string }
-}
-
-export const categories: Category[] = [
-  { id: 'iphone', title: 'iPhone', emoji: '📱' },
-  { id: 'mac', title: 'MacBook', emoji: '💻' },
-  { id: 'ipad', title: 'iPad', emoji: '📲' },
-  { id: 'watch', title: 'Watch', emoji: '⌚' },
-  { id: 'audio', title: 'AirPods', emoji: '🎧' },
-  { id: 'accessories', title: 'Аксессуары', emoji: '🔌' },
-  { id: 'used', title: 'Б/у', emoji: '♻️' },
-]
+type SeedProduct = Omit<Product, 'quantity' | 'photos' | 'createdAt' | 'updatedAt' | 'hidden' | 'preorder'>
 
 const proColors: Color[] = [
   { name: 'Космический оранжевый', hex: '#e8743b' },
@@ -61,7 +30,7 @@ const iphoneMemory = (base: number): MemoryOption[] =>
     .filter((gb) => gb >= base)
     .map((gb, i) => ({ label: gb >= 1024 ? `${gb / 1024} ТБ` : `${gb} ГБ`, delta: i * 20000 }))
 
-export const products: Product[] = [
+const raw: SeedProduct[] = [
   {
     id: 'iphone-17-pro-max',
     category: 'iphone',
@@ -594,18 +563,16 @@ export const products: Product[] = [
   },
 ]
 
-export const findProduct = (id: string) => products.find((p) => p.id === id)
+// Количество для демо: б/у в единственном экземпляре, часть новинок заканчивается, MacBook Pro под заказ.
+const stock: Record<string, number> = { 'iphone-17-pro-max': 2, 'ipad-mini-a17': 0, 'airpods-max': 1 }
+const preorder = new Set(['macbook-pro-14-m5'])
 
-export type RepairService = { id: string; title: string; from: number; time: string }
-
-export const repairDevices = ['iPhone', 'iPad', 'MacBook', 'Apple Watch', 'AirPods'] as const
-
-export const repairServices: RepairService[] = [
-  { id: 'battery', title: 'Замена аккумулятора', from: 2990, time: 'от 30 мин' },
-  { id: 'screen', title: 'Замена дисплея', from: 6990, time: 'от 1 ч' },
-  { id: 'glass', title: 'Замена заднего стекла', from: 3990, time: 'от 2 ч' },
-  { id: 'port', title: 'Не заряжается / разъём', from: 1990, time: 'от 40 мин' },
-  { id: 'camera', title: 'Ремонт камеры', from: 3490, time: 'от 1 ч' },
-  { id: 'water', title: 'После попадания воды', from: 1490, time: 'диагностика' },
-  { id: 'other', title: 'Другое / не знаю', from: 0, time: 'бесплатная диагностика' },
-]
+export const seedProducts = (now = Date.now()): Product[] =>
+  raw.map((p, i) => ({
+    ...p,
+    quantity: stock[p.id] ?? (p.condition === 'used' ? 1 : 5),
+    preorder: preorder.has(p.id) || undefined,
+    photos: [],
+    createdAt: now - i * 1000,
+    updatedAt: now - i * 1000,
+  }))

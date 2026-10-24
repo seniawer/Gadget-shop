@@ -1,13 +1,18 @@
-import { useLayoutEffect, useRef } from 'react'
-import { ActiveScreen, useBackButton } from './components/ui'
+import { useEffect, useLayoutEffect, useRef } from 'react'
+import { Icon, type IconName } from './components/Icon'
+import { ActiveScreen, ToastHost, useBackButton } from './components/ui'
+import { api } from './lib/api'
+import { useCatalog } from './lib/catalog'
 import { cartCount, useStore, type Screen } from './lib/store'
 import { tg } from './lib/telegram'
-import { Home } from './screens/Home'
-import { Catalog } from './screens/Catalog'
-import { ProductPage } from './screens/ProductPage'
+import { AdminEdit } from './screens/admin/AdminEdit'
+import { AdminList } from './screens/admin/AdminList'
 import { Cart } from './screens/Cart'
 import { Checkout } from './screens/Checkout'
+import { Contacts } from './screens/Contacts'
 import { Favorites } from './screens/Favorites'
+import { Home } from './screens/Home'
+import { ProductPage } from './screens/ProductPage'
 import { Repair } from './screens/Repair'
 import { Success } from './screens/Success'
 
@@ -15,8 +20,6 @@ function renderScreen(screen: Screen) {
   switch (screen.name) {
     case 'home':
       return <Home />
-    case 'catalog':
-      return <Catalog category={screen.category} query={screen.query} />
     case 'product':
       return <ProductPage id={screen.id} />
     case 'cart':
@@ -27,47 +30,47 @@ function renderScreen(screen: Screen) {
       return <Favorites />
     case 'repair':
       return <Repair />
+    case 'contacts':
+      return <Contacts />
     case 'success':
       return <Success kind={screen.kind} number={screen.number} />
+    case 'admin':
+      return <AdminList />
+    case 'admin-edit':
+      return <AdminEdit id={screen.id} />
   }
 }
 
-const tabs = [
-  { name: 'home', icon: '🏠', label: 'Главная' },
-  { name: 'catalog', icon: '🗂️', label: 'Каталог' },
-  { name: 'repair', icon: '🛠️', label: 'Ремонт' },
-  { name: 'favorites', icon: '🤍', label: 'Избранное' },
-  { name: 'cart', icon: '🛒', label: 'Корзина' },
-] as const
+const tabs: { name: 'home' | 'favorites' | 'cart' | 'contacts'; icon: IconName; label: string }[] = [
+  { name: 'home', icon: 'home', label: 'Магазин' },
+  { name: 'favorites', icon: 'heart', label: 'Избранное' },
+  { name: 'cart', icon: 'bag', label: 'Корзина' },
+  { name: 'contacts', icon: 'phone', label: 'Контакты' },
+]
 
 function TabBar({ current }: { current: Screen['name'] }) {
   const reset = useStore((s) => s.reset)
-  const navigate = useStore((s) => s.navigate)
   const count = useStore((s) => cartCount(s.cart))
-  const favCount = useStore((s) => s.favorites.length)
 
   return (
-    <nav className="fixed inset-x-0 bottom-0 z-30 flex border-t border-hint/15 bg-bg/95 pb-[env(safe-area-inset-bottom)] backdrop-blur">
+    <nav className="fixed inset-x-0 bottom-0 z-30 mx-auto flex max-w-xl border-t border-sep bg-bg/90 pb-[var(--safe-bottom)] backdrop-blur-xl">
       {tabs.map((t) => {
-        const badge = t.name === 'cart' ? count : t.name === 'favorites' ? favCount : 0
+        const active = current === t.name
         return (
           <button
             key={t.name}
             onClick={() => {
               tg.haptic.select()
-              // Корзина и ремонт открываются поверх, чтобы из них можно было вернуться назад.
-              if (t.name === 'cart' || t.name === 'repair') navigate({ name: t.name })
-              else reset({ name: t.name })
+              reset({ name: t.name })
             }}
-            className={`relative flex flex-1 flex-col items-center gap-0.5 py-2 text-[10px] font-medium ${
-              current === t.name ? 'text-link' : 'text-hint'
-            }`}
+            aria-current={active ? 'page' : undefined}
+            className={`relative flex flex-1 flex-col items-center gap-0.5 pt-2 pb-1.5 text-[10px] font-medium ${active ? 'text-link' : 'text-hint'}`}
           >
-            <span className={`text-xl ${current === t.name ? '' : 'opacity-70 grayscale'}`}>{t.icon}</span>
+            <Icon name={t.icon} size={25} stroke={active ? 2 : 1.7} filled={active && t.name === 'favorites'} />
             {t.label}
-            {badge > 0 && (
-              <span className="absolute top-1 left-1/2 ml-2 min-w-[18px] rounded-full bg-rose-500 px-1 text-[11px] leading-[18px] font-bold text-white">
-                {badge}
+            {t.name === 'cart' && count > 0 && (
+              <span className="absolute top-1 left-1/2 ml-1.5 min-w-[18px] rounded-full bg-[#ff3b30] px-1 text-center text-[11px] leading-[18px] font-bold text-white">
+                {count}
               </span>
             )}
           </button>
@@ -79,11 +82,19 @@ function TabBar({ current }: { current: Screen['name'] }) {
 
 export default function App() {
   const stack = useStore((s) => s.stack)
+  const setAdmin = useStore((s) => s.setAdmin)
+  const loadCatalog = useCatalog((s) => s.load)
   const top = stack[stack.length - 1]
   const scrolls = useRef<number[]>([])
   const prevDepth = useRef(stack.length)
 
   useBackButton(stack.length > 1)
+
+  useEffect(() => {
+    loadCatalog()
+    // Кнопку админки показываем только тем, кого признал сервер. Сама защита — на сервере.
+    if (tg.isTelegram) api.admin.me().then(setAdmin, () => setAdmin(false))
+  }, [loadCatalog, setAdmin])
 
   // Запоминаем прокрутку каждого экрана в стеке и восстанавливаем при возврате назад.
   useLayoutEffect(() => {
@@ -98,19 +109,20 @@ export default function App() {
     return () => window.removeEventListener('scroll', onScroll)
   }, [stack])
 
-  const showTabs = stack.length === 1 && top.name !== 'success'
+  const showTabs = stack.length === 1 && tabs.some((t) => t.name === top.name)
 
   return (
-    <div className={`mx-auto min-h-screen max-w-xl ${showTabs ? 'pb-20' : ''}`}>
+    <div className={`mx-auto min-h-screen max-w-xl ${showTabs ? 'pb-[calc(64px+var(--safe-bottom))]' : ''}`}>
       {stack.map((screen, i) => {
         const active = i === stack.length - 1
         return (
-          <ActiveScreen.Provider key={`${i}-${screen.name}-${JSON.stringify(screen)}`} value={active}>
+          <ActiveScreen.Provider key={`${i}-${JSON.stringify(screen)}`} value={active}>
             <div className={active ? 'screen-in' : 'hidden'}>{renderScreen(screen)}</div>
           </ActiveScreen.Provider>
         )
       })}
       {showTabs && <TabBar current={top.name} />}
+      <ToastHost />
     </div>
   )
 }

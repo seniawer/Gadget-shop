@@ -1,4 +1,4 @@
-import { callBot } from './_lib/telegram.js'
+import { callBot } from '../telegram'
 
 type Update = { message?: { chat: { id: number }; text?: string; from?: { first_name: string } } }
 
@@ -17,14 +17,15 @@ export async function POST(request: Request) {
       chat_id: msg.chat.id,
       text:
         `Привет, ${msg.from?.first_name ?? 'друг'}! 👋\n\n` +
-        'Это магазин техники Apple: новые и проверенные б/у устройства, аксессуары и ремонт.\n\n' +
-        'Нажмите кнопку ниже, чтобы открыть каталог.',
+        'Это «ГАДЖЕТ | ТЕХНИКА | РЕМОНТ | АКСЕССУАРЫ» 📱\n' +
+        'Новые iPhone, iPad и MacBook, предзаказ новинок, проверенные б/у, аксессуары и ремонт.\n\n' +
+        'Жмите кнопку ниже, чтобы открыть каталог 👇',
       reply_markup: { inline_keyboard: [[{ text: '🛍 Открыть магазин', web_app: { url: WEBAPP_URL } }]] },
     })
   } else if (msg) {
     await callBot(BOT_TOKEN, 'sendMessage', {
       chat_id: msg.chat.id,
-      text: 'Спасибо за сообщение! Менеджер ответит в ближайшее время. А пока можно посмотреть каталог 👇',
+      text: 'Спасибо! Менеджеры @IgorSavchuk9 и @adroganova отвечают в течение 5 минут с 9:00 до 22:00. А пока загляните в каталог 👇',
       reply_markup: { inline_keyboard: [[{ text: '🛍 Открыть магазин', web_app: { url: WEBAPP_URL } }]] },
     })
   }

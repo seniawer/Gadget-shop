@@ -1,10 +1,9 @@
 import { useState } from 'react'
-import { findProduct } from '../data/products'
-import { Chip, Field, Header, MainButton } from '../components/ui'
+import { Chip, Field, Group, Header, MainButton, mainButtonSpace } from '../components/ui'
 import { cartTotal, formatPrice, useStore } from '../lib/store'
 import { submit } from '../lib/api'
 import { tg } from '../lib/telegram'
-import { shop } from '../lib/config'
+import { shop } from '../config'
 
 export const isPhone = (v: string) => v.replace(/\D/g, '').length >= 10
 
@@ -41,7 +40,7 @@ export function Checkout() {
         address: delivery === 'courier' ? address.trim() : undefined,
         comment: comment.trim() || undefined,
         items: cart.map((c) => ({
-          title: findProduct(c.productId)?.title ?? c.productId,
+          title: c.title,
           color: c.color,
           memory: c.memory,
           qty: c.qty,
@@ -61,14 +60,14 @@ export function Checkout() {
   }
 
   return (
-    <div className="pb-28">
+    <div className={mainButtonSpace}>
       <Header title="Оформление" />
-      <div className="mx-4 overflow-hidden rounded-2xl bg-section">
+      <Group>
         <Field label="Имя" value={name} onChange={setName} placeholder="Как к вам обращаться" />
         <Field label="Телефон" value={phone} onChange={setPhone} type="tel" placeholder="+7 900 000-00-00" />
-      </div>
+      </Group>
 
-      <div className="mt-5 px-4 text-sm font-semibold">Получение</div>
+      <div className="mt-6 px-4 text-[13px] font-medium tracking-wide text-hint uppercase">Получение</div>
       <div className="mt-2 flex gap-2 px-4">
         <Chip active={delivery === 'pickup'} onClick={() => setDelivery('pickup')}>
           🏬 Самовывоз
@@ -77,19 +76,19 @@ export function Checkout() {
           🚚 Курьер
         </Chip>
       </div>
-      <div className="mx-4 mt-3 overflow-hidden rounded-2xl bg-section">
+      <Group className="mt-3">
         {delivery === 'pickup' ? (
-          <div className="px-4 py-3 text-sm">
-            {shop.address}
+          <div className="border-b border-sep px-4 py-3 text-[15px]">
+            {shop.address || 'Адрес магазина подскажет менеджер'}
             <div className="text-hint">{shop.hours}</div>
           </div>
         ) : (
           <Field label="Адрес доставки" value={address} onChange={setAddress} placeholder="Улица, дом, квартира" />
         )}
         <Field label="Комментарий" value={comment} onChange={setComment} placeholder="Например, удобное время" multiline />
-      </div>
+      </Group>
 
-      <div className="mx-4 mt-5 rounded-2xl bg-section p-4 text-sm">
+      <div className="card mx-4 mt-5 p-4 text-[15px]">
         <div className="flex justify-between text-base font-bold">
           <span>К оплате</span>
           <span>{formatPrice(total)}</span>
@@ -97,7 +96,7 @@ export function Checkout() {
         <div className="mt-1 text-hint">Оплата при получении: наличными, картой или переводом. Менеджер свяжется для подтверждения.</div>
       </div>
 
-      {error && <div className="mx-4 mt-3 text-sm text-danger">{error}</div>}
+      {error && <div className="mx-4 mt-3 text-[15px] text-danger">{error}</div>}
 
       <MainButton text="Подтвердить заказ" onClick={send} loading={loading} />
     </div>
