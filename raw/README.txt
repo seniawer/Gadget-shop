@@ -35,3 +35,17 @@
 - airpods-max: на сайте теперь «AirPods Max 2», фото те же (цвета midnight/starlight/blue/orange).
 - airtag: AirTag 2026 (1 шт. и набор 4 шт.). case-iphone-18-pro: силиконовый чехол MagSafe, цвет Crisp Blue (MK8W4).
 - magsafe-charger: MGD74 (1 м); adapter-20w: MWVV3; cable-usb-c: MW493 (60W, 1 м).
+
+3. Официальные фото, докачка (raw/web/), источники — raw/web/sources.json
+- Apple, store.storeimages.cdn-apple.com, 1600x1600 png-alpha, кадр обрезан параметром cropN на стороне Apple
+  (продукт занимает ~70-90% кадра): iphone-17-pro {cosmic-orange, deep-blue, silver},
+  iphone-17-pro-max {cosmic-orange, deep-blue, silver}, iphone-17-white,
+  б/у: iphone-13-pro-max-sierra-blue, iphone-14-pro-max {space-black, silver},
+  iphone-15-pro {blue-titanium, natural-titanium}, iphone-15-pro-max-blue-titanium, iphone-16-pro-max-white-titanium.
+- macbook-neo-{silver,blush,citrus,indigo}.jpg — apple.com/macbook-neo (вид сверху на закрытую крышку + торец),
+  1812x1812, светло-серый фон Apple; macbook-neo-all-colors.jpg — все 4 цвета веером (магазин Apple), 2190x2190.
+- dyson-airwrap-apricot-topaz.png — Airwrap i.d. Ceramic Apricot/Topaz (стайлер + насадки + кейс), dyson.com, 1096x1096, прозрачный фон.
+- playstation-5-slim.png (1503x1503) и playstation-5-pro.png (1071x1071) — playstation.com, консоль + DualSense, прозрачный фон.
+- yandex-station-midi-graphite.png — alice.yandex.ru/station, 722x722, прозрачный фон
+  (это максимум: оригинал у Яндекса 1065x798, крупнее чистого рендера на сайте нет).
+Файлы с пометкой «обрезано по продукту локально» в sources.json — оригинал по ссылке, обрезан квадратом вокруг продукта без масштабирования.
