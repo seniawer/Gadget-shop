@@ -1,0 +1,8 @@
+# Netlify: сборка фронтенда и функции api/order и api/bot (те же, что для Vercel).
+[build]
+  command = "npm run build"
+  publish = "dist"
+
+[functions]
+  directory = "netlify/functions"
+  node_bundler = "esbuild"

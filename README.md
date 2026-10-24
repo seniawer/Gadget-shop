@@ -35,7 +35,7 @@
 
 - React 19, TypeScript, Vite, Tailwind CSS 4, Zustand (корзина и избранное сохраняются)
 - Telegram Web Apps API (`telegram-web-app.js`)
-- Vercel: статический фронтенд и serverless-функции `api/order` (приём заказов) и `api/bot` (вебхук бота)
+- Serverless-функции `api/order` (приём заказов) и `api/bot` (вебхук бота). Деплоится на Netlify или Vercel без изменений кода
 - Без базы данных: каталог лежит в `src/data/products.ts`
 
 ## Структура
@@ -45,6 +45,7 @@ api/
   order.ts          приём заказа или заявки, проверка initData, отправка менеджеру
   bot.ts            вебхук бота (/start с кнопкой мини-аппа)
   _lib/telegram.ts  проверка подписи и вызовы Bot API
+netlify/functions/  обёртки над api/ для Netlify
 src/
   data/products.ts  каталог и прайс ремонта
   lib/              Telegram-обёртка, состояние, API
@@ -64,14 +65,18 @@ npm run dev
 
 ## Деплой
 
-1. Импортируйте репозиторий в [Vercel](https://vercel.com/new). Настройки сборки Vite определятся автоматически.
-2. В **Settings → Environment Variables** добавьте:
-   - `BOT_TOKEN` — токен бота от @BotFather
-   - `ADMIN_CHAT_ID` — ваш Telegram ID (узнать можно у @userinfobot) или ID группы менеджеров
-   - `WEBAPP_URL` — адрес сайта на Vercel, например `https://gadget-shop.vercel.app`
-   - `WEBHOOK_SECRET` — любая случайная строка (необязательно)
-3. Сделайте Redeploy, чтобы переменные применились.
-4. Подключите бота: `BOT_TOKEN=... WEBAPP_URL=... WEBHOOK_SECRET=... npm run set-webhook`. Скрипт настроит вебхук, кнопку меню «Магазин» и описание бота.
+Переменные окружения (одинаковые для Netlify и Vercel):
+
+- `BOT_TOKEN` — токен бота от @BotFather
+- `ADMIN_CHAT_ID` — ваш Telegram ID (узнать можно у @userinfobot) или ID группы менеджеров. Боту нужно сначала написать /start
+- `WEBAPP_URL` — адрес сайта после деплоя, например `https://gadget-shop.netlify.app`
+- `WEBHOOK_SECRET` — любая случайная строка (необязательно)
+
+**Netlify:** Add new site → Import an existing project → GitHub → репозиторий. Настройки сборки берутся из `netlify.toml`. Переменные добавьте в Site configuration → Environment variables и перезапустите деплой.
+
+**Vercel:** импортируйте репозиторий на [vercel.com/new](https://vercel.com/new), Vite определится автоматически. Переменные добавьте в Settings → Environment Variables и сделайте Redeploy.
+
+**Подключение бота:** `BOT_TOKEN=... WEBAPP_URL=... WEBHOOK_SECRET=... npm run set-webhook`. Скрипт настроит вебхук, кнопку меню «Магазин» и описание бота.
 
 ## Как адаптировать под свой магазин
 
